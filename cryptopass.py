@@ -6,28 +6,27 @@ from cryptography.fernet import Fernet
 import os
 from tkinter import filedialog
 
+sg.theme("SystemDefault") 
 
 settings_location = 'settings.json'
 locations = {"key_location" : " ", "password_location" : " "}
 
-sg.theme("SystemDefault") 
-
 ''' select the backed up files when clicked on the backed up selecting_backedup_new function '''
 def selecting_backup():
-    key_location = sg.popup_get_file(title="Select Key Location", message="Enter Location to Key",  default_path=None, icon='icon\systemlockscreen_94256.ico')
+    key_location = sg.popup_get_file(title="Select Key Location", message="Enter Location to Key",  default_path=None, icon='icon/systemlockscreen_94256.ico')
     if key_location.endswith(".key"):
-        sg.popup("File Loaded Successfully")
-        print(key_location)
+        sg.popup("File Loaded Successfully", icon='icon/systemlockscreen_94256.ico')
     else:
-        sg.popup("File Not Found Error")
+        sg.popup("File Not Found Error", icon='icon/systemlockscreen_94256.ico')
         return selecting_backup()
-    password_location = sg.popup_get_file(title="Select Password List Location", message="Enter Location to Password File",  default_path=None, icon='icon\systemlockscreen_94256.ico')
+    
+    password_location = sg.popup_get_file(title="Select Password List Location", message="Enter Location to Password File",  default_path=None, icon='icon/systemlockscreen_94256.ico')
     if password_location.endswith(".json"):
-        print("file found")
-        print(password_location)
+        sg.popup("Password file Loaded", icon='icon/systemlockscreen_94256.ico')
     else:
-        sg.popup("File Not Found Error")
+        sg.popup("File Not Found Error", icon='icon/systemlockscreen_94256.ico')
         return selecting_backup()
+    
     settings_file = {"key_location": f"{key_location}", "password_location": f"{password_location}"}
     with open(settings_location, 'w') as settings_file_writing:
         json.dump(settings_file, settings_file_writing)
@@ -35,13 +34,15 @@ def selecting_backup():
     
 ''' selecting_backedup_new function starts fresh file '''
 def first_start_create():
-    sg.popup("Enter Location to store Key",  icon='icon\systemlockscreen_94256.ico')
+    sg.popup("Enter Location to store Key",  icon='icon/systemlockscreen_94256.ico')
     key_location = filedialog.askdirectory(initialdir=os.listdir())
-    print(f"{key_location}.key")
+    sg.popup(f"{key_location}.key", icon='icon/systemlockscreen_94256.ico')
+
     key = Fernet.generate_key()
     with open(f"{key_location}/keyfile.key", 'wb') as keyfile:
         keyfile.write(key)
-    sg.popup("Enter Location to store Password File", icon='icon\systemlockscreen_94256.ico')
+    sg.popup("Enter Location to store Password File", icon='icon/systemlockscreen_94256.ico')
+
     password_location = filedialog.askdirectory(initialdir=os.listdir())
     settings_file = {"key_location": f"{key_location}/keyfile.key", "password_location": f"{password_location}/password.json"}
     with open(settings_location, 'w') as settings_file_writing:
@@ -55,13 +56,11 @@ def selecting_backup_new():
         [sg.Text("First Run Do you Have Backed Up Files? or Create New Files?")],
         [sg.Button(yes_text), sg.Button(no_text)]
     ]
-    window = sg.Window("No Files Found", layout, icon='icon\systemlockscreen_94256.ico')
+    window = sg.Window("No Files Found", layout, icon='icon/systemlockscreen_94256.ico')
     event, _ = window.read()
     if event == yes_text:
-        print("Backup option selected")
         window.close()
         selecting_backup()
-        print(locations)
     elif event == no_text:
         window.close()
         first_start_create()
@@ -95,9 +94,11 @@ def saving_password(siteName, password):
         settings = json.load(settings_file)
     selected_key_location = settings['key_location']
     selected_password_location = settings['password_location']
+
     with open(f"{selected_key_location}", 'rb') as filekey:
         key = filekey.read()
     fernet = Fernet(key)
+
     try:
         with open(f"{selected_password_location}", 'rb') as enc_file:
             encrypted = enc_file.read()
@@ -107,14 +108,15 @@ def saving_password(siteName, password):
     except FileNotFoundError:
         json_data = {}
     if siteName in json_data:
-        sg.Popup(f"{siteName} already exists in the password file.", icon="icon\systemlockscreen_94256.ico")
+        sg.Popup(f"{siteName} already exists in the password file.", icon="icon/systemlockscreen_94256.ico")
         return  # Do not proceed with saving
+    
     json_data[siteName] = password
     encoded_data = json.dumps(json_data).encode('utf-8')
     encrypted = fernet.encrypt(encoded_data)
     with open(f"{selected_password_location}", 'wb') as enc_file:
         enc_file.write(encrypted)
-    sg.Popup(f'Password Saved in {os.getcwd()}')
+    sg.Popup(f'Password Saved in {os.getcwd()}', icon='icon/systemlockscreen_94256.ico')
     
 ''' shows the saved password when searched up '''
 def showing_password(search_website):
@@ -122,15 +124,18 @@ def showing_password(search_website):
         settings = json.load(settings_file)
     selected_key_location = settings['key_location']
     selected_password_location = settings['password_location']
+
     with open(f"{selected_key_location}", 'rb') as filekey:
         key = filekey.read()
     fernet = Fernet(key)
+
     with open(f"{selected_password_location}", 'rb') as enc_file:
         encrypted = enc_file.read()
     decrypted = fernet.decrypt(encrypted)
     decoded_data = decrypted.decode('utf-8')
     password_data = json.loads(decoded_data)
     websites_found = []
+
     if search_website in password_data:
         websites_found.append(f"{password_data[search_website]}")
     if websites_found:
